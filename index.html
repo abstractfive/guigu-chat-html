@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+        <head>
+            <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+            <title>龟谷冲冲冲!!!</title>
+	<link rel="stylesheet" href="css/bootstrap.min.css?v=1">
+	<link rel="stylesheet" href="css/bootstrap-responsive.min.css?v=1">
+	<link rel="stylesheet" href="css/theme.css?v=1">
+	
+        </head>
+        <body>
+            <div class="inner-spacer chat-widget widget-content-padding"> 
+									        	
+									        	<!-- chat tabs -->
+												<ul id="myChat" class="nav nav-tabs chat-tabs" >
+									              <li class="active">
+									              	<a href="#user1" data-toggle="tab"><i class="online"></i>龟谷人</a>
+									              	</li>
+
+									              <li class="pull-right">
+									              	
+													<div id="chat-user-control" class="btn-group hidden-phone">
+		                                                <button class="btn dropdown-toggle btn-small btn-link" data-toggle="dropdown"><i class="cus-status-online"></i></button>
+		                                                <ul class="dropdown-menu btn-small pull-right">
+															<li>
+																<a href="javascript:void(0);"><i class="cus-status-online"></i> Available</a>
+															</li>
+															<li>
+																<a href="javascript:void(0);"><i class="cus-cross-shield-2"></i> Busy</a>
+															</li>
+															<li>
+																<a href="javascript:void(0);"><i class="cus-clock"></i> Away</a>
+															</li>
+															<li class="divider"></li>
+															<li>
+																<a href="javascript:void(0);"><i class="cus-disconnect"></i> Disconnect</a>
+															</li>
+		                                                </ul>
+		                                            </div>
+
+							
+									              </li>
+									            </ul>
+									            <!-- end chat tabs -->
+									            
+									            <!-- chat box -->
+									            <div id="myChatTab" class="tab-content chat-content" style="height:300px;overflow-y:auto">
+									              
+									              <!-- chat user1 -->	
+									              <div class="tab-pane fade in active" id="user1">
+									              	
+									              	<!-- chat messages -->
+									              	<div class="chat-messages" id="chat-messages">
+									              		
+									              		
+														<!-- end message-id-3 -->
+									              	
+									             	</div>
+									              	<!-- end chat messages -->
+									              	
+									              </div>
+									              <!-- end chat user1 -->
+									              
+									              <!-- chat user2 -->
+									              <div class="tab-pane fade" id="user2">
+									              	
+									              	<!-- chat messages -->
+									              	
+									              	<!-- end chat messages -->
+									              	
+									              </div>
+									              <!-- end chat user2 -->
+									              
+									            </div>
+									            <!-- end chat box -->
+									            
+									            <div class="row-fluid chat-box">
+									            	
+									            	<textarea name="enter-message" rows="3" cols="1" placeholder="第一次冲是设置名字敖，还不错吧.jpg" id="chat-box-textarea"></textarea>
+													<div class="row-fluid">
+		                                                <div class="span6 type-effect" style="display:none"> Victoria is typing...</div>
+		                                                <div class="span6 chat-box-buttons pull-right">
+		                                                	<input type="button" name="chat-box-textarea" class="btn medium btn-danger pull-right" value="嗯冲" id="send-msg-js" onclick="CHAT.chat()">
+		                                                    <a href="javascript:void(0);" title="" class="pull-right"><i class="icon-camera"></i></a>
+		                                                </div>
+		                                            </div>
+
+									            </div>
+										       		
+											
+									        </div>
+        </body>
+		<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+		<script>
+		$(function(){ 
+			$(document).keydown(function(event){ 
+			if(event.keyCode==13){ 
+				event.preventDefault();
+				$("#send-msg-js").click(); 
+				
+			} 
+			});
+		});
+			window.USERID="";
+			window.CHAT={
+				socket:null,
+				init: function(){
+					if(window.WebSocket){
+						CHAT.socket = new WebSocket("ws://119.29.132.158:8088/ws");
+						CHAT.socket.onopen = function(){
+							console.log("连接成功...");
+						},
+						CHAT.socket.onclose = function(){
+							console.log("连接关闭...");
+						},
+						CHAT.socket.onerror = function(){
+							console.log("连接错误...");
+						},
+						CHAT.socket.onmessage = function(e){
+							console.log("接受到消息:"+e.data);
+												addMsg(e);
+
+						}
+					}else{
+						alert("浏览器不支持websocket");
+					}
+				},
+				chat:function(){
+					var send={};
+					send.body=$("#chat-box-textarea").val();
+					if($("#chat-box-textarea").val()!=""){
+						if(USERID==""){
+							send.flag="reg";
+						}else{
+							send.flag="chat";
+						}
+						CHAT.socket.send(JSON.stringify(send));
+						$("#chat-box-textarea").val("");
+					}else{
+						alert("憨憨？");
+					}
+				}
+			}
+			CHAT.init();
+			function addMsg(e){
+				data=JSON.parse(e.data);
+				if(data.resultCode=="1"){
+					USERID=data.msg;
+					$("#chat-box-textarea").attr("placeholder","输入内容");
+				}
+				if(data.resultCode=="2"){
+					var html="";
+					var userName="";
+					var datetime=new Date();
+					if(data.sendId==USERID){
+						html="<p id='message-id-2' class='message-box you'>";
+						userName=data.sendName;
+					}else{
+						html="<p id='message-id-2' class='message-box'>";
+						userName=data.sendName;
+					}
+					html+="<img src='' alt=''>"+
+					"<span class='message'>"+
+					"<strong>"+userName+"</strong> "+
+					"<span class='message-time'>"+datetime+"</span>"+
+					"<span class='message-text'> "+data.msg+" <i class='cus-emoticon-smile'></i></span>"+
+					"</span>"+
+					"</p>";
+					$("#chat-messages").append(html);	
+					$('#myChatTab').scrollTop($('#myChatTab')[0].scrollHeight);					
+				}
+				if(data.resultCode=="3"){
+				
+				}
+			}
+			
+		</script>
+    </html>
